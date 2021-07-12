@@ -26,43 +26,41 @@ const getUsuarios = async(req, res) => {
 
 }
 
-const crearUsuario = async (req, res = response) => {
-    
+const crearUsuario = async(req, res = response) => {
+
     const { email, password } = req.body;
-
-
-    
 
     try {
 
         const existeEmail = await Usuario.findOne({ email });
 
-        if (existeEmail) {
+        if ( existeEmail ) {
             return res.status(400).json({
                 ok: false,
                 msg: 'El correo ya está registrado'
             });
         }
 
-
         const usuario = new Usuario( req.body );
-
+    
         // Encriptar contraseña
         const salt = bcrypt.genSaltSync();
         usuario.password = bcrypt.hashSync( password, salt );
-
+    
+    
         // Guardar usuario
         await usuario.save();
-        
+
         // Generar el TOKEN - JWT
-        const token =  await generarJWT( usuario.id );
-    
-    
+        const token = await generarJWT( usuario.id );
+
+
         res.json({
             ok: true,
             usuario,
             token
         });
+
 
     } catch (error) {
         console.log(error);
@@ -72,10 +70,6 @@ const crearUsuario = async (req, res = response) => {
         });
     }
 
-
-    
-
-  
 
 }
 
@@ -111,7 +105,15 @@ const actualizarUsuario = async (req, res) => {
 
         }
 
-        campos.email = email;
+        if ( usuarioDB.google ){
+            campos.email = email;
+        } else if ( usuarioDB.email !== email ){
+            return res.status(400).json({
+                ok: false,
+                msg: 'Usuario de google no pueden cambiar su correo'
+            });
+        }
+
 
         const usuarioActualizado = await Usuario.findByIdAndUpdate( uid, campos, { new: true } );
 
